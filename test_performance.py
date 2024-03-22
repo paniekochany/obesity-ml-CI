@@ -8,6 +8,7 @@ from tools import unzip_and_open_dataset
 from tools import split_data_with_id_hash
 import cloudpickle
 
+
 @pytest.fixture
 def obesity():
     """
@@ -21,7 +22,8 @@ def obesity():
         raise FileNotFoundError('obesity.zip file not found.') from e
     except Exception as e:
         raise Exception(f'Error loading obesity: {e}') from e
-        
+
+
 @pytest.fixture
 def obesity_split(obesity):
     """
@@ -31,20 +33,23 @@ def obesity_split(obesity):
     """
     data = obesity.copy()
     data['id'] = data['age'] * data['height'] * data['weight']
-    train_set, test_set = split_data_with_id_hash(data, .2, 'id')
+    train_set, test_set = split_data_with_id_hash(data, 0.2, 'id')
     for set_ in (train_set, test_set):
         set_.drop('id', axis=1, inplace=True)
     return train_set, test_set
+
 
 @pytest.fixture
 def obesity_train(obesity_split):
     """Fixture to provide the training subset of the obesity dataset."""
     return obesity_split[0]
 
+
 @pytest.fixture
 def obesity_test(obesity_split):
     """Fixture to provide the testing subset of the obesity dataset."""
     return obesity_split[1]
+
 
 @pytest.mark.data
 @pytest.mark.parametrize("fixture_name", ["obesity", "obesity_train", "obesity_test"])
@@ -55,12 +60,13 @@ def test_fixture_output_type(fixture_name, request):
     fixture = request.getfixturevalue(fixture_name)
     assert isinstance(fixture, pd.DataFrame)
 
+
 @pytest.fixture
 def preprocessing():
     """
     Fixture to load preprocessing steps from a pickle file.
     """
-    try: 
+    try:
         with open('preprocessing.pkl', 'rb') as f:
             return cloudpickle.load(f)
     except FileNotFoundError as e:
@@ -68,15 +74,18 @@ def preprocessing():
     except Exception as e:
         raise Exception(f'Error loading preprocessing steps: {e}') from e
 
+
 @pytest.fixture
 def obesity_train_preprocessed(preprocessing, obesity_train):
     """Fixture to provide preprocessed training set."""
     return preprocessing.transform(obesity_train)
 
+
 @pytest.fixture
 def obesity_test_preprocessed(preprocessing, obesity_test):
     """Fixture to provide preprocessed testing set."""
     return preprocessing.transform(obesity_test)
+
 
 @pytest.mark.preprocessing
 @pytest.mark.parametrize('fixture_name', ['obesity_train_preprocessed', 'obesity_test_preprocessed'])
@@ -85,6 +94,7 @@ def test_preprocessing(fixture_name, request):
     fixture = request.getfixturevalue(fixture_name)
     assert fixture.shape[1] == 31
 
+
 @pytest.fixture
 def model():
     """Fixture to load the final model from a pickle file."""
@@ -92,10 +102,12 @@ def model():
         final_model = cloudpickle.load(f)
         return final_model
 
+
 @pytest.mark.modelType
 def test_model(model):
     """Test the type of the model instance."""
     assert isinstance(model, BaseEstimator)
+
 
 @pytest.mark.modelPerformance
 def test_performance(model, obesity_train, obesity_test):
